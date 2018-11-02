@@ -3,12 +3,14 @@ import ReactDOM from 'react-dom';
 import './index.css';
 
 
-  /* notes
+  /* Notes
   storing state in the lowest level JSX component isn't super great so we need to lift the state from the lowest level to higher levels (i.e from a child to a parent)
   most notable here because if we kept track of the state for every Square rather than sending the state to the Board, we'd need to coordinate 9 different components together
 
   React also lets you declare function components if all you're doing is returning a JSX expression. Much slicker than using class components
   */
+
+
  function Square(props) {
   return (
     <button className="square" onClick={props.onClick}>
@@ -19,6 +21,8 @@ import './index.css';
 
 class Board extends React.Component {
   renderSquare(i) {
+    // Square recieves value and onClick as props since Game handles state as of Commit da87c24
+    // We also move handleClick from Board to Game so we use onClick instead
     return ( // ALSO We split the returned element into multiple lines for readability, and added parentheses so that JavaScript doesn’t insert a semicolon after return and break our code.
       <Square
         value={this.props.squares[i]}
@@ -51,6 +55,7 @@ class Board extends React.Component {
 }
 
 class Game extends React.Component {
+  // since this is the root component this should be the one to handle most of the state changing and stuff
   constructor(props) {
     super(props);
     this.state = {
@@ -64,13 +69,15 @@ class Game extends React.Component {
 
 
   handleClick(i) {
-    const history = this.state.history.slice(0, this.state.stepNumber + 1);
-    const current = history[history.length - 1];
+    const history = this.state.history.slice(0, this.state.stepNumber + 1); // setting up the current history entry as a new copy of the current array(i.e history[i+1])
+    const current = history[history.length - 1]; // same as above
     const squares = current.squares.slice();
-    if (calculateWinner(squares) || squares[i]) {
+
+    if (calculateWinner(squares) || squares[i]) { // if someone wins or if the square is filled, return
       return;
     }
-    squares[i] = this.state.xIsNext ? 'X' : 'O';
+    squares[i] = this.state.xIsNext ? 'X' : 'O'; // set next player
+
     this.setState({
       history: history.concat([{
         squares: squares,
@@ -88,14 +95,15 @@ class Game extends React.Component {
   }
 
   render() {
-    const history = this.state.history;
-    const current = history[this.state.stepNumber];
-    const winner = calculateWinner(current.squares);
+    const history = this.state.history; // reading state as a variable
+    const current = history[this.state.stepNumber]; // getting the current state of the square
+    const winner = calculateWinner(current.squares); // checking if there's a winner
 
-    const moves = history.map((step, move) => {
+    const moves = history.map((step, move) => { // using map to make a list of the moves taken in the current game and allows the user to toggle between board states
       const desc = move ?
         'Go to move #' + move :
         'Go to game start';
+      // note that the below button recieves onClick = {()=> this.jumpTo()}, the function is listed below
       return (
         <li key={move}>
           <button onClick={() => this.jumpTo(move)}>{desc}</button>
@@ -109,6 +117,7 @@ class Game extends React.Component {
     } else {
       status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
     }
+    // We need to pass squares and onClick as properties to Board since Game is handling state now
     return (
       <div className="game">
         <div className="game-board">
@@ -127,7 +136,7 @@ class Game extends React.Component {
 }
 
 function calculateWinner(squares) {
-  const lines = [
+  const lines = [ // various win conditions
     [0, 1, 2],
     [3, 4, 5],
     [6, 7, 8],
